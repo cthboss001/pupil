@@ -3,80 +3,2344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CF Training Analytics Tracker</title>
+    <title>CF Training Analytics • Professional Dashboard</title>
     <style>
+        /* ==================== VARIABLES - GITHUB INSPIRED ==================== */
+        :root {
+            --bg-canvas: #0d1117;
+            --bg-canvas-inset: #010409;
+            --bg-elevated: #161b22;
+            --bg-overlay: #1c2128;
+            --border-default: #30363d;
+            --border-muted: #21262d;
+            --border-emphasis: #58a6ff;
+            
+            --text-primary: #e6edf3;
+            --text-secondary: #8d96a0;
+            --text-muted: #6e7681;
+            --text-link: #58a6ff;
+            --text-success: #3fb950;
+            --text-warning: #d29922;
+            --text-danger: #f85149;
+            
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-purple: #bc8cff;
+            --accent-orange: #ff9b66;
+            --accent-red: #ff7b72;
+            
+            --rating-1000: #58a6ff;
+            --rating-1100: #bc8cff;
+            --rating-1200: #3fb950;
+            
+            --shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+            
+            --font-mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Courier New', monospace;
+            --font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            
+            --transition-smooth: cubic-bezier(0.33, 1, 0.68, 1);
+            --transition-duration: 0.15s;
+        }
+        
+        /* ==================== RESET & BASE ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            background-color: #1e1e1e;
-            color: #ffffff;
-            font-family: Arial, sans-serif;
+            font-family: var(--font-system);
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-primary);
+            background-color: var(--bg-canvas);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        header {
-            padding: 20px;
-            text-align: center;
-            background-color: #282c34;
+        
+        /* ==================== SYNC INDICATOR ==================== */
+        .sync-indicator {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            padding: 8px 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 999;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s;
         }
-        main {
-            padding: 20px;
+        
+        .sync-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
         }
-        .graph {
+        
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--sync-color);
+            animation: pulse 2s infinite;
+        }
+        
+        .sync-indicator.syncing {
+            --sync-color: var(--text-warning);
+        }
+        
+        .sync-indicator.synced {
+            --sync-color: var(--text-success);
+        }
+        
+        .sync-indicator.error {
+            --sync-color: var(--text-danger);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* ==================== LAYOUT ==================== */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: var(--bg-canvas-inset);
+            border-bottom: 1px solid var(--border-default);
+            padding: 16px 32px;
+        }
+        
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .header-nav {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            justify-content: flex-end;
+        }
+        
+        .main-content {
+            max-width: 1280px;
             width: 100%;
-            height: 300px;
-            background-color: #333;
-            margin: 20px 0;
+            margin: 0 auto;
+            padding: 32px;
         }
-        .confetti {
+        
+        /* ==================== BUTTONS ==================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+            white-space: nowrap;
+            vertical-align: middle;
+            cursor: pointer;
+            user-select: none;
+            border: 1px solid;
+            border-radius: 6px;
+            transition: all var(--transition-duration) var(--transition-smooth);
+            background-color: transparent;
+            color: var(--text-primary);
+            border-color: var(--border-default);
+        }
+        
+        .btn:hover {
+            background-color: var(--bg-overlay);
+            border-color: var(--text-muted);
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: #ffffff;
+        }
+        
+        .btn-primary:hover {
+            background-color: #4493e1;
+            border-color: #4493e1;
+        }
+        
+        .btn-sm {
+            padding: 3px 12px;
+            font-size: 12px;
+        }
+        
+        /* ==================== STATS OVERVIEW ==================== */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            padding: 16px;
+            transition: all var(--transition-duration) var(--transition-smooth);
+        }
+        
+        .stat-card:hover {
+            border-color: var(--border-emphasis);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .stat-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 18px;
+            border-radius: 12px;
+            color: var(--badge-color);
+            background-color: rgba(88, 166, 255, 0.15);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--stat-color);
+            line-height: 1.2;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        .stat-card[data-rating="1000"] {
+            --stat-color: var(--rating-1000);
+            --badge-color: var(--rating-1000);
+        }
+        
+        .stat-card[data-rating="1100"] {
+            --stat-color: var(--rating-1100);
+            --badge-color: var(--rating-1100);
+        }
+        
+        .stat-card[data-rating="1200"] {
+            --stat-color: var(--rating-1200);
+            --badge-color: var(--rating-1200);
+        }
+        
+        .stat-card[data-type="streak"] {
+            --stat-color: var(--accent-orange);
+            --badge-color: var(--accent-orange);
+        }
+        
+        .stat-card[data-type="total"] {
+            --stat-color: var(--text-primary);
+            --badge-color: var(--accent-purple);
+        }
+        
+        /* ==================== CONTRIBUTION GRAPH ==================== */
+        .section {
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-muted);
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .contribution-graph {
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        
+        .graph-container {
+            display: inline-block;
+            min-width: 100%;
+        }
+        
+        .graph-months {
+            display: flex;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            padding-left: 32px;
+        }
+        
+        .graph-month {
+            min-width: 52px;
+        }
+        
+        .graph-body {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .graph-days-label {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            font-size: 9px;
+            color: var(--text-muted);
+            padding-right: 4px;
+            padding-top: 2px;
+        }
+        
+        .graph-weeks {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .graph-week {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        
+        .graph-day {
+            width: 11px;
+            height: 11px;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all var(--transition-duration);
+            outline: 1px solid rgba(27, 31, 36, 0.06);
+            outline-offset: -1px;
+        }
+        
+        .graph-day:hover {
+            outline: 1px solid rgba(255, 255, 255, 0.3);
+            outline-offset: 0;
+            transform: scale(1.2);
+        }
+        
+        .graph-day[data-level="0"] {
+            background-color: var(--bg-canvas-inset);
+        }
+        
+        .graph-day[data-level="1"] {
+            background-color: rgba(88, 166, 255, 0.3);
+        }
+        
+        .graph-day[data-level="2"] {
+            background-color: rgba(88, 166, 255, 0.6);
+        }
+        
+        .graph-day[data-level="3"] {
+            background-color: rgba(88, 166, 255, 0.9);
+        }
+        
+        .graph-legend {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        
+        .legend-text {
+            margin-right: 4px;
+        }
+        
+        .legend-day {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        
+        /* ==================== TODAY'S TRACKER ==================== */
+        .today-tracker {
+            background: linear-gradient(135deg, rgba(88, 166, 255, 0.1), rgba(188, 140, 255, 0.1));
+            border: 1px solid var(--border-emphasis);
+            border-radius: 6px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .today-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .today-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .today-info h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .today-date {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+        
+        .rating-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        
+        .rating-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all var(--transition-duration) var(--transition-smooth);
+        }
+        
+        .rating-item:hover {
+            border-color: var(--item-color);
+            background-color: rgba(88, 166, 255, 0.05);
+        }
+        
+        .rating-item.checked {
+            border-color: var(--item-color);
+            background-color: rgba(88, 166, 255, 0.1);
+        }
+        
+        .rating-item[data-rating="1000"] {
+            --item-color: var(--rating-1000);
+        }
+        
+        .rating-item[data-rating="1100"] {
+            --item-color: var(--rating-1100);
+        }
+        
+        .rating-item[data-rating="1200"] {
+            --item-color: var(--rating-1200);
+        }
+        
+        .custom-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-default);
+            border-radius: 4px;
+            position: relative;
+            flex-shrink: 0;
+            transition: all var(--transition-duration) var(--transition-smooth);
+        }
+        
+        .rating-item:hover .custom-checkbox {
+            border-color: var(--item-color);
+        }
+        
+        .rating-item.checked .custom-checkbox {
+            background-color: var(--item-color);
+            border-color: var(--item-color);
+        }
+        
+        .custom-checkbox::after {
+            content: '';
             position: absolute;
-            pointer-events: none;
+            display: none;
+            left: 6px;
+            top: 2px;
+            width: 4px;
+            height: 9px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .rating-item.checked .custom-checkbox::after {
+            display: block;
+        }
+        
+        .rating-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        
+        /* ==================== ANALYTICS GRID ==================== */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .analytics-card {
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            padding: 16px;
+        }
+        
+        .analytics-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+        
+        .progress-item {
+            margin-bottom: 16px;
+        }
+        
+        .progress-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        
+        .progress-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+        
+        .progress-value {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        
+        .progress-bar-bg {
+            height: 6px;
+            background-color: var(--bg-canvas-inset);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--progress-color);
+            border-radius: 3px;
+            transition: width 0.3s var(--transition-smooth);
+        }
+        
+        .progress-item[data-rating="1000"] {
+            --progress-color: var(--rating-1000);
+        }
+        
+        .progress-item[data-rating="1100"] {
+            --progress-color: var(--rating-1100);
+        }
+        
+        .progress-item[data-rating="1200"] {
+            --progress-color: var(--rating-1200);
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-muted);
+        }
+        
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        
+        /* ==================== CHART ==================== */
+        .chart-container {
+            position: relative;
+            height: 180px;
+            margin-top: 12px;
+        }
+        
+        .chart-canvas {
             width: 100%;
             height: 100%;
-            overflow: hidden;
+        }
+        
+        /* ==================== MODAL ==================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-duration) var(--transition-smooth);
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal-content {
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-muted);
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 20px;
+            padding: 4px;
+            transition: color var(--transition-duration);
+        }
+        
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            line-height: 20px;
+            color: var(--text-primary);
+            background-color: var(--bg-canvas-inset);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            outline: none;
+            transition: all var(--transition-duration) var(--transition-smooth);
+        }
+        
+        .form-input:focus {
+            border-color: var(--border-emphasis);
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-canvas-inset);
+            border: 1px solid var(--border-default);
+            transition: 0.2s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-muted);
+            transition: 0.2s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+            background-color: white;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-muted);
+        }
+        
+        /* ==================== TOAST ==================== */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-left: 3px solid var(--toast-color);
+            border-radius: 6px;
+            padding: 16px;
+            box-shadow: var(--shadow-lg);
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            transition: all var(--transition-duration) var(--transition-smooth);
+            max-width: 400px;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .toast.success {
+            --toast-color: var(--text-success);
+        }
+        
+        .toast.error {
+            --toast-color: var(--text-danger);
+        }
+        
+        .toast.warning {
+            --toast-color: var(--text-warning);
+        }
+        
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .toast-icon {
+            font-size: 18px;
+        }
+        
+        .toast-message {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        
+        /* ==================== CONFETTI ==================== */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 16px;
+            }
+            
+            .main-content {
+                padding: 16px;
+            }
+            
+            .stats-overview {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .rating-checkboxes {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* ==================== SCROLLBAR ==================== */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-canvas);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-default);
+            border-radius: 6px;
+            border: 3px solid var(--bg-canvas);
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+        
+        /* ==================== ANIMATIONS ==================== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s var(--transition-smooth);
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Codeforces Problem Solving Progress Tracker</h1>
-    </header>
-    <main>
-        <div class="graph" id="graph"></div>
-        <button id="syncBtn">Sync with Firebase</button>
-        <div id="stats"></div>
-    </main>
-    <div class="confetti" id="confetti"></div>
+    <!-- Sync Indicator -->
+    <div id="sync-indicator" class="sync-indicator">
+        <div class="sync-dot"></div>
+        <span id="sync-text">Syncing...</span>
+    </div>
+    
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="toast-content">
+            <span class="toast-icon"></span>
+            <span class="toast-message"></span>
+        </div>
+    </div>
+    
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <a href="#" class="logo">
+                    <div class="logo-icon">⚡</div>
+                    <span>CF Training Analytics</span>
+                </a>
+                <nav class="header-nav">
+                    <button class="btn btn-sm" id="firebase-setup-btn">
+                        🔥 Firebase Setup
+                    </button>
+                    <button class="btn btn-sm" id="settings-btn">
+                        ⚙️ Settings
+                    </button>
+                    <button class="btn btn-sm" id="export-btn">
+                        💾 Export
+                    </button>
+                    <button class="btn btn-sm" id="import-btn">
+                        📥 Import
+                    </button>
+                </nav>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Stats Overview -->
+            <div class="stats-overview fade-in">
+                <div class="stat-card" data-rating="1000">
+                    <div class="stat-header">
+                        <span class="stat-title">Rating 1000</span>
+                        <span class="stat-badge" id="badge-1000">CF</span>
+                    </div>
+                    <div class="stat-value" id="stat-1000">0</div>
+                    <div class="stat-label">problems solved</div>
+                </div>
+                <div class="stat-card" data-rating="1100">
+                    <div class="stat-header">
+                        <span class="stat-title">Rating 1100</span>
+                        <span class="stat-badge" id="badge-1100">CF</span>
+                    </div>
+                    <div class="stat-value" id="stat-1100">0</div>
+                    <div class="stat-label">problems solved</div>
+                </div>
+                <div class="stat-card" data-rating="1200">
+                    <div class="stat-header">
+                        <span class="stat-title">Rating 1200</span>
+                        <span class="stat-badge" id="badge-1200">CF</span>
+                    </div>
+                    <div class="stat-value" id="stat-1200">0</div>
+                    <div class="stat-label">problems solved</div>
+                </div>
+                <div class="stat-card" data-type="streak">
+                    <div class="stat-header">
+                        <span class="stat-title">Current Streak</span>
+                        <span class="stat-badge">🔥</span>
+                    </div>
+                    <div class="stat-value" id="stat-current-streak">0</div>
+                    <div class="stat-label">days in a row</div>
+                </div>
+                <div class="stat-card" data-type="streak">
+                    <div class="stat-header">
+                        <span class="stat-title">Longest Streak</span>
+                        <span class="stat-badge">🏆</span>
+                    </div>
+                    <div class="stat-value" id="stat-longest-streak">0</div>
+                    <div class="stat-label">personal best</div>
+                </div>
+                <div class="stat-card" data-type="total">
+                    <div class="stat-header">
+                        <span class="stat-title">Total Solved</span>
+                        <span class="stat-badge">📊</span>
+                    </div>
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">all time</div>
+                </div>
+            </div>
+            
+            <!-- Today's Tracker -->
+            <div class="today-tracker fade-in">
+                <div class="today-header">
+                    <div class="today-icon">🎯</div>
+                    <div class="today-info">
+                        <h2>Today's Progress</h2>
+                        <div class="today-date" id="today-date"></div>
+                    </div>
+                </div>
+                <div class="rating-checkboxes" id="today-checkboxes">
+                    <!-- Dynamically generated -->
+                </div>
+            </div>
+            
+            <!-- Contribution Graph -->
+            <div class="section fade-in">
+                <div class="section-header">
+                    <h2 class="section-title">Activity Overview</h2>
+                    <div class="toolbar">
+                        <button class="btn btn-sm" id="clear-expired-btn">🗑️ Clear Old Data</button>
+                    </div>
+                </div>
+                <div class="contribution-graph" id="contribution-graph">
+                    <!-- Dynamically generated -->
+                </div>
+            </div>
+            
+            <!-- Analytics Grid -->
+            <div class="analytics-grid fade-in">
+                <div class="analytics-card">
+                    <div class="analytics-header">Completion Rate</div>
+                    <div class="progress-item" data-rating="1000">
+                        <div class="progress-header">
+                            <span class="progress-label">1000</span>
+                            <span class="progress-value" id="completion-1000">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="progress-1000" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="progress-item" data-rating="1100">
+                        <div class="progress-header">
+                            <span class="progress-label">1100</span>
+                            <span class="progress-value" id="completion-1100">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="progress-1100" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="progress-item" data-rating="1200">
+                        <div class="progress-header">
+                            <span class="progress-label">1200</span>
+                            <span class="progress-value" id="completion-1200">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="progress-1200" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="analytics-header">Moving Averages</div>
+                    <div class="metric-item">
+                        <span class="metric-label">7-day average</span>
+                        <span class="metric-value" id="avg-7">0.00</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">14-day average</span>
+                        <span class="metric-value" id="avg-14">0.00</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">30-day average</span>
+                        <span class="metric-value" id="avg-30">0.00</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">All-time average</span>
+                        <span class="metric-value" id="avg-all">0.00</span>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="analytics-header">Activity Chart</div>
+                    <div class="chart-container">
+                        <canvas id="activity-chart" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Firebase Setup Modal -->
+    <div id="firebase-setup-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🔥 Firebase Configuration</h2>
+                <button class="modal-close" id="close-firebase-setup">×</button>
+            </div>
+            
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Enter your Firebase credentials to enable cloud sync across devices.
+            </p>
+            
+            <div class="form-group">
+                <label class="form-label">API Key</label>
+                <input type="text" class="form-input" id="firebase-api-key" placeholder="AIza...">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Auth Domain</label>
+                <input type="text" class="form-input" id="firebase-auth-domain" placeholder="your-app.firebaseapp.com">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Database URL</label>
+                <input type="text" class="form-input" id="firebase-database-url" placeholder="https://your-app.firebaseio.com">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Project ID</label>
+                <input type="text" class="form-input" id="firebase-project-id" placeholder="your-app">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Storage Bucket</label>
+                <input type="text" class="form-input" id="firebase-storage-bucket" placeholder="your-app.appspot.com">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Messaging Sender ID</label>
+                <input type="text" class="form-input" id="firebase-messaging-sender-id" placeholder="123456789">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">App ID</label>
+                <input type="text" class="form-input" id="firebase-app-id" placeholder="1:123456789:web:abc123">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">User ID (unique identifier for your data)</label>
+                <input type="text" class="form-input" id="firebase-user-id" placeholder="your-username">
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn" id="cancel-firebase-setup">Cancel</button>
+                <button class="btn btn-primary" id="save-firebase-config">Save & Connect</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Settings</h2>
+                <button class="modal-close" id="close-settings">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Data Retention (days)</label>
+                <input type="number" class="form-input" id="setting-expiration" min="30" max="730" value="365">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Days to Display</label>
+                <input type="number" class="form-input" id="setting-days-display" min="30" max="365" value="60">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Daily Reminder Time</label>
+                <input type="time" class="form-input" id="setting-reminder-time" value="20:00">
+            </div>
+            
+            <div class="form-group">
+                <div class="toggle-container">
+                    <label class="form-label" style="margin-bottom: 0;">Enable Animations</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="setting-animations" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="toggle-container">
+                    <label class="form-label" style="margin-bottom: 0;">Enable Daily Reminders</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="setting-reminders">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">PIN Lock (4 digits, optional)</label>
+                <input type="password" class="form-input" id="setting-pin" placeholder="Enter PIN" maxlength="4">
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn" id="cancel-settings">Cancel</button>
+                <button class="btn btn-primary" id="save-settings">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PIN Modal -->
+    <div id="pin-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Enter PIN</h2>
+                <button class="modal-close" id="close-pin">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">PIN Required</label>
+                <input type="password" class="form-input" id="pin-input" placeholder="Enter your PIN" maxlength="4" autofocus>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn" id="cancel-pin">Cancel</button>
+                <button class="btn btn-primary" id="submit-pin">Submit</button>
+            </div>
+        </div>
+    </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };  
 
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        // Function for syncing data with Firebase
-        function syncData() {
-            // Add your data management logic here
+        // ==================== FIREBASE MANAGER ====================
+        
+        class FirebaseManager {
+            constructor() {
+                this.db = null;
+                this.isConnected = false;
+                this.config = this.loadConfig();
+                this.userId = this.config.userId || '';
+                
+                if (this.config.apiKey) {
+                    this.initialize();
+                }
+            }
+            
+            loadConfig() {
+                const stored = localStorage.getItem('firebaseConfig');
+                if (stored) {
+                    try {
+                        return JSON.parse(stored);
+                    } catch (e) {
+                        console.error('Failed to parse Firebase config', e);
+                    }
+                }
+                return {};
+            }
+            
+            saveConfig(config) {
+                this.config = config;
+                localStorage.setItem('firebaseConfig', JSON.stringify(config));
+            }
+            
+            initialize() {
+                try {
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp({
+                            apiKey: this.config.apiKey,
+                            authDomain: this.config.authDomain,
+                            databaseURL: this.config.databaseURL,
+                            projectId: this.config.projectId,
+                            storageBucket: this.config.storageBucket,
+                            messagingSenderId: this.config.messagingSenderId,
+                            appId: this.config.appId
+                        });
+                    }
+                    
+                    this.db = firebase.database();
+                    this.userId = this.config.userId;
+                    this.isConnected = true;
+                    
+                    console.log('Firebase initialized successfully');
+                    this.showSyncIndicator('synced', 'Connected to Firebase');
+                    
+                    // Listen for remote changes
+                    this.setupRealtimeListener();
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Firebase initialization error:', error);
+                    this.showSyncIndicator('error', 'Connection failed');
+                    return false;
+                }
+            }
+            
+            setupRealtimeListener() {
+                if (!this.db || !this.userId) return;
+                
+                const dataRef = this.db.ref(`users/${this.userId}/trackerData`);
+                
+                dataRef.on('value', (snapshot) => {
+                    const remoteData = snapshot.val();
+                    if (remoteData) {
+                        // Only update if remote data is newer
+                        const localData = dataManager.data;
+                        const remoteUpdatedAt = new Date(remoteData.updatedAt);
+                        const localUpdatedAt = new Date(localData.updatedAt);
+                        
+                        if (remoteUpdatedAt > localUpdatedAt) {
+                            console.log('Syncing from cloud...');
+                            dataManager.data = remoteData;
+                            dataManager.save();
+                            
+                            // Refresh UI
+                            if (window.uiManager) {
+                                uiManager.renderTodayTracker();
+                                uiManager.renderContributionGraph();
+                                uiManager.updateStats();
+                                uiManager.updateAnalytics();
+                                uiManager.showToast('✓ Synced from cloud', 'success');
+                            }
+                        }
+                    }
+                });
+            }
+            
+            async syncToCloud(data) {
+                if (!this.isConnected || !this.userId) {
+                    console.warn('Firebase not connected');
+                    return false;
+                }
+                
+                try {
+                    this.showSyncIndicator('syncing', 'Syncing...');
+                    
+                    const dataRef = this.db.ref(`users/${this.userId}/trackerData`);
+                    await dataRef.set(data);
+                    
+                    console.log('Data synced to cloud');
+                    this.showSyncIndicator('synced', 'Synced');
+                    
+                    setTimeout(() => {
+                        this.hideSyncIndicator();
+                    }, 2000);
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Sync error:', error);
+                    this.showSyncIndicator('error', 'Sync failed');
+                    
+                    setTimeout(() => {
+                        this.hideSyncIndicator();
+                    }, 3000);
+                    
+                    return false;
+                }
+            }
+            
+            async loadFromCloud() {
+                if (!this.isConnected || !this.userId) {
+                    return null;
+                }
+                
+                try {
+                    const dataRef = this.db.ref(`users/${this.userId}/trackerData`);
+                    const snapshot = await dataRef.once('value');
+                    return snapshot.val();
+                } catch (error) {
+                    console.error('Load error:', error);
+                    return null;
+                }
+            }
+            
+            showSyncIndicator(status, text) {
+                const indicator = document.getElementById('sync-indicator');
+                const textEl = document.getElementById('sync-text');
+                
+                indicator.className = `sync-indicator ${status}`;
+                textEl.textContent = text;
+                indicator.classList.add('show');
+            }
+            
+            hideSyncIndicator() {
+                const indicator = document.getElementById('sync-indicator');
+                indicator.classList.remove('show');
+            }
         }
-
-        // Event listener for sync button
-        document.getElementById('syncBtn').addEventListener('click', syncData);
-
-        // Confetti animation function
-        function startConfetti() {
-            const confettiContainer = document.getElementById('confetti');
-            // Add your confetti logic here
+        
+        // ==================== DATA MANAGER ====================
+        
+        const APP_KEY = 'cfTrackerPro_v2';
+        const RATINGS = ['1000', '1100', '1200'];
+        
+        class DataManager {
+            constructor() {
+                this.data = this.load();
+                this.undoStack = [];
+                this.redoStack = [];
+                this.maxStackSize = 20;
+                this.syncTimeout = null;
+            }
+            
+            load() {
+                const stored = localStorage.getItem(APP_KEY);
+                if (stored) {
+                    try {
+                        return JSON.parse(stored);
+                    } catch (e) {
+                        console.error('Failed to parse stored data', e);
+                    }
+                }
+                return this.createDefault();
+            }
+            
+            createDefault() {
+                return {
+                    version: '2.0',
+                    updatedAt: new Date().toISOString(),
+                    startDate: this.formatDate(new Date()),
+                    settings: {
+                        expirationDays: 365,
+                        daysToShow: 60,
+                        dailyTarget: 3,
+                        animationsEnabled: true,
+                        reminderTime: '20:00',
+                        remindersEnabled: false
+                    },
+                    records: {},
+                    pinHash: null
+                };
+            }
+            
+            save() {
+                this.data.updatedAt = new Date().toISOString();
+                localStorage.setItem(APP_KEY, JSON.stringify(this.data));
+                
+                // Debounced cloud sync
+                if (window.firebaseManager && firebaseManager.isConnected) {
+                    clearTimeout(this.syncTimeout);
+                    this.syncTimeout = setTimeout(() => {
+                        firebaseManager.syncToCloud(this.data);
+                    }, 1000);
+                }
+                
+                window.dispatchEvent(new Event('storage'));
+            }
+            
+            saveState() {
+                this.undoStack.push(JSON.stringify(this.data));
+                if (this.undoStack.length > this.maxStackSize) {
+                    this.undoStack.shift();
+                }
+                this.redoStack = [];
+            }
+            
+            undo() {
+                if (this.undoStack.length === 0) return false;
+                this.redoStack.push(JSON.stringify(this.data));
+                this.data = JSON.parse(this.undoStack.pop());
+                this.save();
+                return true;
+            }
+            
+            redo() {
+                if (this.redoStack.length === 0) return false;
+                this.undoStack.push(JSON.stringify(this.data));
+                this.data = JSON.parse(this.redoStack.pop());
+                this.save();
+                return true;
+            }
+            
+            getRecord(date) {
+                if (!this.data.records[date]) {
+                    this.data.records[date] = {
+                        '1000': false,
+                        '1100': false,
+                        '1200': false
+                    };
+                }
+                return this.data.records[date];
+            }
+            
+            setRating(date, rating, value) {
+                this.saveState();
+                const record = this.getRecord(date);
+                record[rating] = value;
+                this.save();
+            }
+            
+            clearExpired() {
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - this.data.settings.expirationDays);
+                const cutoffStr = this.formatDate(cutoff);
+                
+                let count = 0;
+                for (const date in this.data.records) {
+                    if (date < cutoffStr) {
+                        delete this.data.records[date];
+                        count++;
+                    }
+                }
+                
+                if (count > 0) {
+                    this.save();
+                }
+                return count;
+            }
+            
+            getAllDates() {
+                return Object.keys(this.data.records).sort();
+            }
+            
+            formatDate(date) {
+                return date.toISOString().split('T')[0];
+            }
+            
+            exportData() {
+                return JSON.stringify(this.data, null, 2);
+            }
+            
+            importData(jsonString) {
+                try {
+                    const imported = JSON.parse(jsonString);
+                    if (!imported.records || !imported.settings) {
+                        throw new Error('Invalid data format');
+                    }
+                    this.saveState();
+                    this.data = imported;
+                    this.save();
+                    return true;
+                } catch (e) {
+                    console.error('Import failed', e);
+                    return false;
+                }
+            }
+            
+            checkPin(pin) {
+                if (!this.data.pinHash) return true;
+                return btoa(pin) === this.data.pinHash;
+            }
+            
+            setPin(pin) {
+                if (pin && pin.length >= 4) {
+                    this.data.pinHash = btoa(pin);
+                } else {
+                    this.data.pinHash = null;
+                }
+                this.save();
+            }
         }
-
-        // Call startConfetti on triggering events
+        
+        // ==================== UI MANAGER ====================
+        
+        class UIManager {
+            constructor(dataManager) {
+                this.dm = dataManager;
+                this.pendingAction = null;
+            }
+            
+            init() {
+                this.ensureTodayExists();
+                this.renderTodayTracker();
+                this.renderContributionGraph();
+                this.updateStats();
+                this.updateAnalytics();
+                this.setupEventListeners();
+                this.setupKeyboardShortcuts();
+            }
+            
+            ensureTodayExists() {
+                const today = this.dm.formatDate(new Date());
+                this.dm.getRecord(today);
+            }
+            
+            renderTodayTracker() {
+                const today = this.dm.formatDate(new Date());
+                const todayDate = new Date();
+                const dateStr = todayDate.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                
+                document.getElementById('today-date').textContent = dateStr;
+                
+                const container = document.getElementById('today-checkboxes');
+                container.innerHTML = '';
+                
+                const record = this.dm.getRecord(today);
+                
+                RATINGS.forEach(rating => {
+                    const item = document.createElement('div');
+                    item.className = 'rating-item';
+                    item.dataset.rating = rating;
+                    if (record[rating]) {
+                        item.classList.add('checked');
+                    }
+                    
+                    item.innerHTML = `
+                        <div class="custom-checkbox"></div>
+                        <span class="rating-label">Rating ${rating}</span>
+                    `;
+                    
+                    item.addEventListener('click', () => this.handleRatingClick(today, rating));
+                    
+                    container.appendChild(item);
+                });
+            }
+            
+            async handleRatingClick(date, rating) {
+                if (this.dm.data.pinHash) {
+                    this.pendingAction = { date, rating };
+                    this.showPinModal();
+                    return;
+                }
+                
+                this.toggleRating(date, rating);
+            }
+            
+            toggleRating(date, rating) {
+                const record = this.dm.getRecord(date);
+                const newValue = !record[rating];
+                this.dm.setRating(date, rating, newValue);
+                
+                if (newValue && this.dm.data.settings.animationsEnabled) {
+                    this.triggerConfetti();
+                }
+                
+                this.renderTodayTracker();
+                this.renderContributionGraph();
+                this.updateStats();
+                this.updateAnalytics();
+                
+                const today = this.dm.formatDate(new Date());
+                if (date === today) {
+                    const todayRecord = this.dm.getRecord(today);
+                    const todaySolved = RATINGS.filter(r => todayRecord[r]).length;
+                    
+                    if (todaySolved === 3) {
+                        this.showToast('🎉 Perfect! All 3 problems completed today!', 'success');
+                        this.triggerConfetti('rainbow');
+                    } else if (newValue) {
+                        this.showToast(`✓ Rating ${rating} marked!`, 'success');
+                    } else {
+                        this.showToast('Mark removed', 'warning');
+                    }
+                }
+            }
+            
+            renderContributionGraph() {
+                const container = document.getElementById('contribution-graph');
+                
+                const days = this.getDisplayDays();
+                const weeks = this.groupByWeeks(days);
+                const months = this.getMonthLabels(days);
+                
+                let html = '<div class="graph-container">';
+                
+                html += '<div class="graph-months">';
+                months.forEach(month => {
+                    html += `<div class="graph-month">${month}</div>`;
+                });
+                html += '</div>';
+                
+                html += '<div class="graph-body">';
+                
+                html += '<div class="graph-days-label">';
+                html += '<div>Mon</div>';
+                html += '<div>Wed</div>';
+                html += '<div>Fri</div>';
+                html += '</div>';
+                
+                html += '<div class="graph-weeks">';
+                weeks.forEach(week => {
+                    html += '<div class="graph-week">';
+                    week.forEach(day => {
+                        if (day) {
+                            const record = this.dm.getRecord(day);
+                            const count = RATINGS.filter(r => record[r]).length;
+                            html += `<div class="graph-day" data-level="${count}" data-date="${day}" title="${day}: ${count} solved"></div>`;
+                        } else {
+                            html += '<div class="graph-day" style="opacity: 0;"></div>';
+                        }
+                    });
+                    html += '</div>';
+                });
+                html += '</div>';
+                
+                html += '</div>';
+                
+                html += '<div class="graph-legend">';
+                html += '<span class="legend-text">Less</span>';
+                for (let i = 0; i <= 3; i++) {
+                    html += `<div class="legend-day graph-day" data-level="${i}"></div>`;
+                }
+                html += '<span class="legend-text">More</span>';
+                html += '</div>';
+                
+                html += '</div>';
+                
+                container.innerHTML = html;
+            }
+            
+            getDisplayDays() {
+                const today = new Date();
+                const daysToShow = this.dm.data.settings.daysToShow;
+                const days = [];
+                
+                for (let i = daysToShow - 1; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    days.push(this.dm.formatDate(date));
+                }
+                
+                return days;
+            }
+            
+            groupByWeeks(days) {
+                const weeks = [];
+                let currentWeek = [];
+                
+                const firstDate = new Date(days[0] + 'T00:00:00');
+                const startDay = firstDate.getDay();
+                
+                for (let i = 0; i < (startDay === 0 ? 6 : startDay - 1); i++) {
+                    currentWeek.push(null);
+                }
+                
+                days.forEach(day => {
+                    if (currentWeek.length === 7) {
+                        weeks.push(currentWeek);
+                        currentWeek = [];
+                    }
+                    
+                    currentWeek.push(day);
+                });
+                
+                while (currentWeek.length < 7) {
+                    currentWeek.push(null);
+                }
+                
+                if (currentWeek.length > 0) {
+                    weeks.push(currentWeek);
+                }
+                
+                return weeks;
+            }
+            
+            getMonthLabels(days) {
+                const months = [];
+                let lastMonth = '';
+                
+                days.forEach((day, index) => {
+                    const date = new Date(day + 'T00:00:00');
+                    const month = date.toLocaleDateString('en-US', { month: 'short' });
+                    
+                    if (month !== lastMonth && index % 4 === 0) {
+                        months.push(month);
+                        lastMonth = month;
+                    }
+                });
+                
+                return months;
+            }
+            
+            updateStats() {
+                const allDates = this.dm.getAllDates();
+                
+                const stats = {
+                    '1000': 0,
+                    '1100': 0,
+                    '1200': 0,
+                    total: 0
+                };
+                
+                allDates.forEach(date => {
+                    const record = this.dm.getRecord(date);
+                    RATINGS.forEach(rating => {
+                        if (record[rating]) {
+                            stats[rating]++;
+                            stats.total++;
+                        }
+                    });
+                });
+                
+                document.getElementById('stat-1000').textContent = stats['1000'];
+                document.getElementById('stat-1100').textContent = stats['1100'];
+                document.getElementById('stat-1200').textContent = stats['1200'];
+                document.getElementById('stat-total').textContent = stats.total;
+                
+                const streaks = this.calculateStreaks();
+                document.getElementById('stat-current-streak').textContent = streaks.current;
+                document.getElementById('stat-longest-streak').textContent = streaks.longest;
+            }
+            
+            calculateStreaks() {
+                const today = new Date();
+                const dates = [];
+                const startDate = new Date(this.dm.data.startDate || today);
+                
+                let current = new Date(today);
+                while (current >= startDate) {
+                    dates.unshift(this.dm.formatDate(current));
+                    current.setDate(current.getDate() - 1);
+                }
+                
+                dates.reverse();
+                
+                let currentStreak = 0;
+                let longestStreak = 0;
+                let tempStreak = 0;
+                
+                for (let i = 0; i < dates.length; i++) {
+                    const record = this.dm.getRecord(dates[i]);
+                    const hasSolved = RATINGS.some(r => record[r]);
+                    
+                    if (hasSolved) {
+                        tempStreak++;
+                        if (i === 0) {
+                            currentStreak = tempStreak;
+                        }
+                    } else {
+                        longestStreak = Math.max(longestStreak, tempStreak);
+                        if (i === 0) currentStreak = 0;
+                        tempStreak = 0;
+                    }
+                }
+                
+                longestStreak = Math.max(longestStreak, tempStreak);
+                if (tempStreak > 0 && currentStreak === 0) {
+                    currentStreak = tempStreak;
+                }
+                
+                return { current: currentStreak, longest: longestStreak };
+            }
+            
+            updateAnalytics() {
+                const days = this.getDisplayDays();
+                const totalDays = days.length;
+                
+                RATINGS.forEach(rating => {
+                    let count = 0;
+                    days.forEach(date => {
+                        if (this.dm.getRecord(date)[rating]) count++;
+                    });
+                    const percent = totalDays > 0 ? ((count / totalDays) * 100).toFixed(1) : 0;
+                    document.getElementById(`completion-${rating}`).textContent = `${percent}%`;
+                    document.getElementById(`progress-${rating}`).style.width = `${percent}%`;
+                });
+                
+                const dailyTotals = days.map(date => {
+                    const record = this.dm.getRecord(date);
+                    return RATINGS.filter(r => record[r]).length;
+                });
+                
+                const avg7 = this.calculateMovingAverage(dailyTotals.slice(-7));
+                const avg14 = this.calculateMovingAverage(dailyTotals.slice(-14));
+                const avg30 = this.calculateMovingAverage(dailyTotals.slice(-30));
+                const avgAll = this.calculateMovingAverage(dailyTotals);
+                
+                document.getElementById('avg-7').textContent = avg7.toFixed(2);
+                document.getElementById('avg-14').textContent = avg14.toFixed(2);
+                document.getElementById('avg-30').textContent = avg30.toFixed(2);
+                document.getElementById('avg-all').textContent = avgAll.toFixed(2);
+                
+                this.drawActivityChart(dailyTotals);
+            }
+            
+            calculateMovingAverage(arr) {
+                if (arr.length === 0) return 0;
+                return arr.reduce((a, b) => a + b, 0) / arr.length;
+            }
+            
+            drawActivityChart(data) {
+                const canvas = document.getElementById('activity-chart');
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+                
+                canvas.width = canvas.offsetWidth * dpr;
+                canvas.height = canvas.offsetHeight * dpr;
+                ctx.scale(dpr, dpr);
+                
+                const width = canvas.offsetWidth;
+                const height = canvas.offsetHeight;
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                if (data.length === 0) return;
+                
+                const max = Math.max(...data, 3);
+                const padding = 30;
+                const chartWidth = width - padding * 2;
+                const chartHeight = height - padding * 2;
+                const step = chartWidth / Math.max(data.length - 1, 1);
+                
+                ctx.strokeStyle = 'rgba(48, 54, 61, 0.5)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 3; i++) {
+                    const y = padding + (chartHeight * i / 3);
+                    ctx.beginPath();
+                    ctx.moveTo(padding, y);
+                    ctx.lineTo(width - padding, y);
+                    ctx.stroke();
+                }
+                
+                ctx.beginPath();
+                ctx.strokeStyle = '#58a6ff';
+                ctx.lineWidth = 2;
+                ctx.lineJoin = 'round';
+                
+                data.forEach((value, index) => {
+                    const x = padding + index * step;
+                    const y = padding + chartHeight - (value / max) * chartHeight;
+                    
+                    if (index === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                
+                ctx.stroke();
+                
+                const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
+                gradient.addColorStop(0, 'rgba(88, 166, 255, 0.2)');
+                gradient.addColorStop(1, 'rgba(88, 166, 255, 0.0)');
+                
+                ctx.lineTo(width - padding, height - padding);
+                ctx.lineTo(padding, height - padding);
+                ctx.closePath();
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                ctx.fillStyle = '#58a6ff';
+                data.forEach((value, index) => {
+                    const x = padding + index * step;
+                    const y = padding + chartHeight - (value / max) * chartHeight;
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+            
+            // ==================== EVENT HANDLERS ====================
+            
+            setupEventListeners() {
+                // Firebase Setup
+                document.getElementById('firebase-setup-btn').addEventListener('click', () => {
+                    this.showFirebaseSetupModal();
+                });
+                
+                document.getElementById('close-firebase-setup').addEventListener('click', () => {
+                    this.hideFirebaseSetupModal();
+                });
+                
+                document.getElementById('cancel-firebase-setup').addEventListener('click', () => {
+                    this.hideFirebaseSetupModal();
+                });
+                
+                document.getElementById('save-firebase-config').addEventListener('click', () => {
+                    this.saveFirebaseConfig();
+                });
+                
+                // Settings
+                document.getElementById('settings-btn').addEventListener('click', () => {
+                    this.showSettingsModal();
+                });
+                
+                document.getElementById('close-settings').addEventListener('click', () => {
+                    this.hideSettingsModal();
+                });
+                
+                document.getElementById('cancel-settings').addEventListener('click', () => {
+                    this.hideSettingsModal();
+                });
+                
+                document.getElementById('save-settings').addEventListener('click', () => {
+                    this.saveSettings();
+                });
+                
+                // Export/Import
+                document.getElementById('export-btn').addEventListener('click', () => {
+                    this.exportBackup();
+                });
+                
+                document.getElementById('import-btn').addEventListener('click', () => {
+                    this.importBackup();
+                });
+                
+                // Clear expired
+                document.getElementById('clear-expired-btn').addEventListener('click', () => {
+                    const count = this.dm.clearExpired();
+                    this.showToast(`Cleared ${count} old records`, 'success');
+                    this.renderContributionGraph();
+                    this.updateStats();
+                });
+                
+                // PIN Modal
+                document.getElementById('close-pin').addEventListener('click', () => {
+                    this.hidePinModal();
+                });
+                
+                document.getElementById('cancel-pin').addEventListener('click', () => {
+                    this.hidePinModal();
+                });
+                
+                document.getElementById('submit-pin').addEventListener('click', () => {
+                    this.submitPin();
+                });
+                
+                document.getElementById('pin-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.submitPin();
+                    }
+                });
+                
+                // Close modals on overlay click
+                document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                    overlay.addEventListener('click', (e) => {
+                        if (e.target === overlay) {
+                            overlay.classList.remove('active');
+                        }
+                    });
+                });
+            }
+            
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 'z') {
+                        e.preventDefault();
+                        if (this.dm.undo()) {
+                            this.showToast('Undo successful', 'success');
+                            this.renderTodayTracker();
+                            this.renderContributionGraph();
+                            this.updateStats();
+                            this.updateAnalytics();
+                        }
+                    } else if (e.ctrlKey && e.key === 'y') {
+                        e.preventDefault();
+                        if (this.dm.redo()) {
+                            this.showToast('Redo successful', 'success');
+                            this.renderTodayTracker();
+                            this.renderContributionGraph();
+                            this.updateStats();
+                            this.updateAnalytics();
+                        }
+                    }
+                });
+            }
+            
+            showFirebaseSetupModal() {
+                const modal = document.getElementById('firebase-setup-modal');
+                modal.classList.add('active');
+                
+                const config = firebaseManager.config;
+                document.getElementById('firebase-api-key').value = config.apiKey || '';
+                document.getElementById('firebase-auth-domain').value = config.authDomain || '';
+                document.getElementById('firebase-database-url').value = config.databaseURL || '';
+                document.getElementById('firebase-project-id').value = config.projectId || '';
+                document.getElementById('firebase-storage-bucket').value = config.storageBucket || '';
+                document.getElementById('firebase-messaging-sender-id').value = config.messagingSenderId || '';
+                document.getElementById('firebase-app-id').value = config.appId || '';
+                document.getElementById('firebase-user-id').value = config.userId || '';
+            }
+            
+            hideFirebaseSetupModal() {
+                const modal = document.getElementById('firebase-setup-modal');
+                modal.classList.remove('active');
+            }
+            
+            saveFirebaseConfig() {
+                const config = {
+                    apiKey: document.getElementById('firebase-api-key').value.trim(),
+                    authDomain: document.getElementById('firebase-auth-domain').value.trim(),
+                    databaseURL: document.getElementById('firebase-database-url').value.trim(),
+                    projectId: document.getElementById('firebase-project-id').value.trim(),
+                    storageBucket: document.getElementById('firebase-storage-bucket').value.trim(),
+                    messagingSenderId: document.getElementById('firebase-messaging-sender-id').value.trim(),
+                    appId: document.getElementById('firebase-app-id').value.trim(),
+                    userId: document.getElementById('firebase-user-id').value.trim()
+                };
+                
+                if (!config.apiKey || !config.databaseURL || !config.userId) {
+                    this.showToast('Please fill in all required fields', 'error');
+                    return;
+                }
+                
+                firebaseManager.saveConfig(config);
+                
+                if (firebaseManager.initialize()) {
+                    this.hideFirebaseSetupModal();
+                    this.showToast('✓ Firebase connected successfully!', 'success');
+                    
+                    // Initial sync
+                    firebaseManager.syncToCloud(this.dm.data);
+                } else {
+                    this.showToast('Connection failed. Check your credentials.', 'error');
+                }
+            }
+            
+            showSettingsModal() {
+                const modal = document.getElementById('settings-modal');
+                modal.classList.add('active');
+                
+                document.getElementById('setting-expiration').value = this.dm.data.settings.expirationDays;
+                document.getElementById('setting-days-display').value = this.dm.data.settings.daysToShow;
+                document.getElementById('setting-reminder-time').value = this.dm.data.settings.reminderTime;
+                document.getElementById('setting-animations').checked = this.dm.data.settings.animationsEnabled;
+                document.getElementById('setting-reminders').checked = this.dm.data.settings.remindersEnabled;
+            }
+            
+            hideSettingsModal() {
+                const modal = document.getElementById('settings-modal');
+                modal.classList.remove('active');
+            }
+            
+            saveSettings() {
+                this.dm.data.settings.expirationDays = parseInt(document.getElementById('setting-expiration').value);
+                this.dm.data.settings.daysToShow = parseInt(document.getElementById('setting-days-display').value);
+                this.dm.data.settings.reminderTime = document.getElementById('setting-reminder-time').value;
+                this.dm.data.settings.animationsEnabled = document.getElementById('setting-animations').checked;
+                this.dm.data.settings.remindersEnabled = document.getElementById('setting-reminders').checked;
+                
+                const pin = document.getElementById('setting-pin').value;
+                if (pin) {
+                    this.dm.setPin(pin);
+                }
+                
+                this.dm.save();
+                this.hideSettingsModal();
+                this.showToast('Settings saved successfully', 'success');
+                
+                this.renderContributionGraph();
+                this.updateAnalytics();
+            }
+            
+            showPinModal() {
+                const modal = document.getElementById('pin-modal');
+                modal.classList.add('active');
+                document.getElementById('pin-input').value = '';
+                setTimeout(() => document.getElementById('pin-input').focus(), 100);
+            }
+            
+            hidePinModal() {
+                const modal = document.getElementById('pin-modal');
+                modal.classList.remove('active');
+                this.pendingAction = null;
+            }
+            
+            submitPin() {
+                const pin = document.getElementById('pin-input').value;
+                if (this.dm.checkPin(pin)) {
+                    this.hidePinModal();
+                    if (this.pendingAction) {
+                        this.toggleRating(this.pendingAction.date, this.pendingAction.rating);
+                        this.pendingAction = null;
+                    }
+                } else {
+                    this.showToast('Incorrect PIN', 'error');
+                    document.getElementById('pin-input').value = '';
+                }
+            }
+            
+            exportBackup() {
+                const data = this.dm.exportData();
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cf-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.showToast('Backup exported successfully', 'success');
+            }
+            
+            importBackup() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            if (confirm('This will overwrite your current data. Continue?')) {
+                                if (this.dm.importData(event.target.result)) {
+                                    this.showToast('Data imported successfully', 'success');
+                                    this.renderTodayTracker();
+                                    this.renderContributionGraph();
+                                    this.updateStats();
+                                    this.updateAnalytics();
+                                } else {
+                                    this.showToast('Import failed: Invalid data format', 'error');
+                                }
+                            }
+                        };
+                        reader.readAsText(file);
+                    }
+                };
+                input.click();
+            }
+            
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                const icons = {
+                    success: '✓',
+                    error: '✗',
+                    warning: '⚠'
+                };
+                
+                toast.querySelector('.toast-icon').textContent = icons[type] || icons.success;
+                toast.querySelector('.toast-message').textContent = message;
+                toast.className = `toast ${type}`;
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+            
+            // ==================== CONFETTI ====================
+            
+            triggerConfetti(colorScheme = 'default') {
+                if (!this.dm.data.settings.animationsEnabled) return;
+                
+                const canvas = document.getElementById('confetti-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                
+                const colors = this.getConfettiColors(colorScheme);
+                const particles = [];
+                
+                for (let i = 0; i < 60; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: -20,
+                        vx: (Math.random() - 0.5) * 5,
+                        vy: Math.random() * 3 + 2,
+                        rotation: Math.random() * 360,
+                        rotationSpeed: (Math.random() - 0.5) * 15,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        size: Math.random() * 10 + 4,
+                        shape: Math.random() > 0.5 ? 'square' : 'circle'
+                    });
+                }
+                
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    particles.forEach((p, index) => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.15;
+                        p.rotation += p.rotationSpeed;
+                        
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rotation * Math.PI) / 180);
+                        ctx.fillStyle = p.color;
+                        
+                        if (p.shape === 'circle') {
+                            ctx.beginPath();
+                            ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        } else {
+                            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                        }
+                        
+                        ctx.restore();
+                        
+                        if (p.y > canvas.height) {
+                            particles.splice(index, 1);
+                        }
+                    });
+                    
+                    if (particles.length > 0) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+                
+                animate();
+            }
+            
+            getConfettiColors(scheme) {
+                const schemes = {
+                    default: ['#58a6ff', '#bc8cff', '#3fb950', '#ff9b66'],
+                    rainbow: ['#ff6bcb', '#bc8cff', '#58a6ff', '#3fb950', '#ff9b66', '#ff7b72']
+                };
+                
+                return schemes[scheme] || schemes.default;
+            }
+        }
+        
+        // ==================== INITIALIZATION ====================
+        
+        const firebaseManager = new FirebaseManager();
+        const dataManager = new DataManager();
+        const uiManager = new UIManager(dataManager);
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            uiManager.init();
+        });
     </script>
 </body>
 </html>
