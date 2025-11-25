@@ -1317,6 +1317,11 @@
                     console.log('Firebase initialized successfully');
                     this.showSyncIndicator('synced', 'Connected to Firebase');
                     
+                    // Hide indicator after showing connection status
+                    setTimeout(() => {
+                        this.hideSyncIndicator();
+                    }, 2000);
+                    
                     // Listen for remote changes
                     this.setupRealtimeListener();
                     
@@ -1343,8 +1348,15 @@
                         
                         if (remoteUpdatedAt > localUpdatedAt) {
                             console.log('Syncing from cloud...');
-                            dataManager.data = remoteData;
-                            dataManager.save();
+                            
+                            // Set flag to prevent triggering cloud sync when saving locally
+                            dataManager.isSyncingFromCloud = true;
+                            try {
+                                dataManager.data = remoteData;
+                                dataManager.save(true); // Skip cloud sync
+                            } finally {
+                                dataManager.isSyncingFromCloud = false;
+                            }
                             
                             // Refresh UI
                             if (window.uiManager) {
@@ -1354,6 +1366,11 @@
                                 uiManager.updateAnalytics();
                                 uiManager.showToast('✓ Synced from cloud', 'success');
                             }
+                            
+                            this.showSyncIndicator('synced', 'Synced from cloud');
+                            setTimeout(() => {
+                                this.hideSyncIndicator();
+                            }, 2000);
                         }
                     }
                 });
@@ -1433,6 +1450,7 @@
                 this.redoStack = [];
                 this.maxStackSize = 20;
                 this.syncTimeout = null;
+                this.isSyncingFromCloud = false; // Flag to prevent sync loop
             }
             
             load() {
@@ -1465,12 +1483,12 @@
                 };
             }
             
-            save() {
+            save(skipCloudSync = false) {
                 this.data.updatedAt = new Date().toISOString();
                 localStorage.setItem(APP_KEY, JSON.stringify(this.data));
                 
-                // Debounced cloud sync
-                if (window.firebaseManager && firebaseManager.isConnected) {
+                // Only sync to cloud if not currently syncing from cloud and not explicitly skipped
+                if (!skipCloudSync && !this.isSyncingFromCloud && window.firebaseManager && firebaseManager.isConnected) {
                     clearTimeout(this.syncTimeout);
                     this.syncTimeout = setTimeout(() => {
                         firebaseManager.syncToCloud(this.data);
