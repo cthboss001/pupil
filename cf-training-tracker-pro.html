@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codeforces Training Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            margin: 0;
+            padding: 0;
+            color: white;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #6200ea;
+            color: white;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #3700b3;
+        }
+        input {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin: 5px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Codeforces Training Tracker</h1>
+            <input type="text" id="problem" placeholder="Enter Codeforces Problem Link">
+            <button onclick="addProblem()">Add Problem</button>
+            <ul id="problemList"></ul>
+        </div>
+    </div>
+    <script>
+        const problems = [];
+
+        function addProblem() {
+            const problemInput = document.getElementById('problem');
+            const problemLink = problemInput.value;
+            if (problemLink) {
+                problems.push(problemLink);
+                problemInput.value = '';
+                renderProblems();
+            }
+        }
+
+        function renderProblems() {
+            const problemList = document.getElementById('problemList');
+            problemList.innerHTML = '';
+            problems.forEach((problem) => {
+                const li = document.createElement('li');
+                li.textContent = problem;
+                problemList.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>
